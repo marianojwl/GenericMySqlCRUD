@@ -44,26 +44,26 @@ namespace marianojwl\GenericMySqlCRUD {
             $html = '';
             $html .= '<table class="table table-dark">' . PHP_EOL;
             $html .= '<thead>' . PHP_EOL;
-            $html .= '<tr>' . PHP_EOL;
+            $html .= '<tr>';
             foreach($this->columns as $col) {
                 $html .= '<td>';
                 $html .= $col->getField();
-                $html .= '</td>' . PHP_EOL;
+                $html .= '</td>';
             }
-            $html .= '<td>Edit</td>' . PHP_EOL;
-            $html .= '<td>Del.</td>' . PHP_EOL;
+            $html .= '<td>Edit</td>' ;
+            $html .= '<td>Del.</td>';
             $html .= '</tr>' . PHP_EOL;
             $html .= '</thead>' . PHP_EOL;
             $html .= '<tbody>' . PHP_EOL;
             foreach($this->records as $record) {
-                $html .= '<tr>' . PHP_EOL;
+                $html .= '<tr>';
                 foreach($this->columns as $col) {
                     $html .= '<td>';
                     $html .= $record[$col->getField()];
-                    $html .= '</td>' . PHP_EOL;
+                    $html .= '</td>';
                 }
-                $html .= '<td><a href="?action=edit&id='.$record[ $this->getPrimaryKeyFieldName() ].'">Edit</a></td>' . PHP_EOL;
-                $html .= '<td><a href="?action=delete&id='.$record[ $this->getPrimaryKeyFieldName() ].'">Del.</a></td>' . PHP_EOL;
+                $html .= '<td><a href="?action=edit&id='.$record[ $this->getPrimaryKeyFieldName() ].'">Edit</a></td>';
+                $html .= '<td><a href="?action=delete&id='.$record[ $this->getPrimaryKeyFieldName() ].'">Del.</a></td>';
                 $html .= '</tr>' . PHP_EOL;
             }
             $html .= '</tbody>' . PHP_EOL;
@@ -98,6 +98,55 @@ namespace marianojwl\GenericMySqlCRUD {
             $html .= '</form>';
             
             return $html;
+        }
+
+        public function create() {
+            $sql = "INSERT INTO ".$this->name." ";
+            $sql .= "(". implode(", ", array_filter( 
+                array_map(
+                    function($c) {
+                        if($c->isPrimaryKey())
+                            return null;
+                        else
+                            return $c->getField();
+                    },
+                    $this->columns) ,
+                    function($element) {
+                        return $element !== null;
+                    } )
+            ) .")";
+            $sql .= " VALUES";
+            $sql .= "(". implode(", ", array_filter( 
+                array_map(
+                    function($c) {
+                        if($c->isPrimaryKey())
+                            return null;
+                        else {
+                            $val = $this->conn->real_escape_string($_POST[$c->getField()]);
+                            if( empty($val) && $c->getDefault() ) {
+                                switch($c->getDefault()) {
+                                    case "current_timestamp()":
+                                        return "CURRENT_TIMESTAMP";
+                                        break;
+                                    default:
+                                        return "'".$c->getDefault()."'";
+                                    break;
+                                }
+                            } else {
+                                return "'".$val."'";
+                            }
+                        }
+
+                            
+                            
+                    },
+                    $this->columns) ,
+                    function($element) {
+                        return $element !== null;
+                    } )
+            ) .")";
+            echo $sql;
+            $this->conn->query($sql);
         }
         public function renderForm() {
             echo $this->getFormHTML();

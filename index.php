@@ -29,6 +29,9 @@ $table = new Table("muvidb","peliculas");
             case "edit":
                 echo '<h2>Edit</h2>';
                 break;
+            case "create":
+                    $table->create();
+                break;
         }
         ?>
         <?php $table->renderForm(); ?> 

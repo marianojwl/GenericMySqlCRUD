@@ -52,8 +52,10 @@ namespace marianojwl\GenericMySqlCRUD {
             }
 
             $html .= ' type="'.$formType.'"';
+            $html .= ' name="'.$this->Field.'"';
             $html .= ' value="'.$value.'"';
-            
+            if($this->isPrimaryKey())
+                $html .= ' disabled="disabled"';
             $html .= ' />';
 
             return $html;
