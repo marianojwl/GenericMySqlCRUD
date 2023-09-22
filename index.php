@@ -32,6 +32,8 @@ $table = new Table("muvidb","peliculas");
         }
         ?>
         <?php $table->renderForm(); ?> 
+    </div>
+    <div class="container mt-3">
         <h2>Records</h2>
         <?php $table->renderRecords(); ?> 
     </div>  
