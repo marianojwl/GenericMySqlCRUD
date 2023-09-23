@@ -21,7 +21,7 @@ namespace marianojwl\GenericMySqlCRUD {
             $tableNames = $this->getTableNames();
             foreach($tableNames as $tn)
                 if(!in_array($tn,$ignore)) 
-                    $this->tables[] = new Table($this->conn, $tn);
+                    $this->tables[] = new Table($this->conn, $tn, $name);
         }
 
         public function getTables() {

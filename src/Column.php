@@ -1,6 +1,9 @@
 <?php
 namespace marianojwl\GenericMySqlCRUD {
     class Column {
+        protected $conn;
+        protected $tableName;
+        protected $dbName;
         protected $Field;
         protected $Type;
         protected $Null;
@@ -15,7 +18,10 @@ namespace marianojwl\GenericMySqlCRUD {
         }
 
         // Constructor
-        public function __construct($Field, $Type, $Null, $Key, $Default, $Extra, $ForeignKeyTable, $ForeignKeyField) {
+        public function __construct($conn, $tableName, $dbName, $Field, $Type, $Null, $Key, $Default, $Extra, $ForeignKeyTable, $ForeignKeyField) {
+            $this->conn = $conn;
+            $this->tableName = $tableName;
+            $this->dbName = $dbName;
             $this->Field = $Field;
             $this->Type = $Type;
             $this->Null = $Null;
@@ -28,6 +34,23 @@ namespace marianojwl\GenericMySqlCRUD {
 
 
         public function getFormField($value = ""){
+            if($this->ForeignKeyTable && $this->ForeignKeyField) {
+                $table = new Table($this->conn, $this->ForeignKeyTable, $this->dbName);
+                $html = '<select';
+                $html .= ' name="'.$this->Field.'"';
+                $html .= '>';
+                $html .= $table->getSelectOptions($value);
+                $html .= '</select>';
+                return $html;
+            }
+            if($this->Type == "longtext") {
+                $html  = '<textarea';
+                $html .= ' name="'.$this->Field.'"';
+                $html .= '>';
+                $html .= $value;
+                $html .= '</textarea>';
+                return $html;
+            }
             @list($type,$size) = explode("(",$this->Type);
             $size = substr($size,0,-1);
 

@@ -5,7 +5,8 @@ spl_autoload_register(function ($c) { $f = 'src/' .  explode("\\",$c)[2]  . '.ph
 use marianojwl\GenericMySqlCRUD\Database;
 use marianojwl\GenericMySqlCRUD\Table;
 //$table = new Table("muvidb","peliculas");
-$db = new Database("localhost","root","","muvidb", ["afiches_alta"] );
+//$db = new Database("localhost","root","","muvidb", ["afiches_alta"] );
+$db = new Database("localhost","root","","mediaprocessor");
 ?>
 <html lang="en">
 <head>
@@ -55,11 +56,11 @@ if($table !== null) {
         <?php
         switch($_GET['action']??"") {
             default:
-                echo '<h2>New</h2>' . PHP_EOL;
+                echo '<h2>New record for '.$table->getName().'</h2>' . PHP_EOL;
                 $table->renderForm(); 
                 break;
             case "edit":
-                echo '<h2>Edit</h2>' . PHP_EOL;
+                echo '<h2>Edit record from '.$table->getName().'</h2>' . PHP_EOL;
                 $keyValue = $_GET[ $table->getPrimaryKey() ];
                 $formValues = $table->getRecordByPrimaryKey( $keyValue );
                 $table->renderForm( $formValues );

@@ -9,8 +9,8 @@ namespace marianojwl\GenericMySqlCRUD {
         protected $primaryKey;
         protected $formValues;
 
-        public function __construct($conn, $name) {
-            //$this->dbName = $dbName;
+        public function __construct($conn, $name, $dbName) {
+            $this->dbName = $dbName;
             $this->name = $name;
             $this->conn = $conn;
             $this->columns = $this->getAllColumns();
@@ -21,16 +21,82 @@ namespace marianojwl\GenericMySqlCRUD {
         public function getPrimaryKey() {
             return $this->primaryKey;
         }
+        public function getSelectOptions($selected = null) {
+            $html = '';
+            $result = $this->conn->query("SELECT * FROM ".$this->name);
+            while($row = $result->fetch_assoc()) {
+                $html .= '<option value=""';
+                if($selected == $row[$this->primaryKey])
+                    $html .= ' selected="selected"';
+                $html .= '>';
+                $html .= implode(" - ", $row);
+                $html .= '</option>' . PHP_EOL;
+            }
+
+            return $html;
+        }
         public function addColumn(Column $column) {
             $this->columns[] = $column;
         }
         private function getAllColumns() {
             $objs = [];
-            $sql = "SHOW COLUMNS FROM ".$this->name;
+            
+            $sql = "SELECT 
+            C.ORDINAL_POSITION AS 'Order',
+            C.COLUMN_NAME AS 'Field',
+            C.COLUMN_TYPE AS 'Type',
+            C.IS_NULLABLE AS 'Null',
+            C.COLUMN_KEY AS 'Key',
+            C.COLUMN_DEFAULT AS 'Default',
+            C.EXTRA AS 'Extra',
+            K.REFERENCED_TABLE_NAME,
+            K.REFERENCED_COLUMN_NAME
+        FROM (
+            SELECT 
+                ORDINAL_POSITION,
+                COLUMN_NAME, 
+                DATA_TYPE, 
+                COLUMN_TYPE, 
+                IS_NULLABLE,
+                COLUMN_DEFAULT,
+                EXTRA,
+                COLUMN_KEY
+            FROM 
+                information_schema.COLUMNS
+            WHERE 
+                TABLE_SCHEMA = '".$this->dbName."'
+                AND TABLE_NAME = '".$this->name."'
+        ) C
+        LEFT JOIN (
+            SELECT 
+                COLUMN_NAME, 
+                REFERENCED_TABLE_NAME, 
+                REFERENCED_COLUMN_NAME
+            FROM 
+                information_schema.KEY_COLUMN_USAGE
+            WHERE 
+                TABLE_SCHEMA = '".$this->dbName."' 
+                AND TABLE_NAME = '".$this->name."' 
+                AND REFERENCED_TABLE_NAME IS NOT NULL
+        ) K
+        ON 
+            C.COLUMN_NAME = K.COLUMN_NAME
+        ORDER BY `Order`;";
             $result = $this->conn->query($sql);
-            while($row = $result->fetch_assoc())
-                $objs[] = new Column($row["Field"], $row["Type"], $row["Null"], $row["Key"], $row["Default"], $row["Extra"], null, null);
-            return $objs;
+            if($result && $result->num_rows) {
+                while($row = $result->fetch_assoc())
+                $objs[] = new Column($this->conn, $this->name, $this->dbName, $row["Field"], $row["Type"], $row["Null"], $row["Key"], $row["Default"], $row["Extra"], $row["REFERENCED_TABLE_NAME"], $row["REFERENCED_COLUMN_NAME"]);
+                return $objs;
+            }
+
+            $sql2 = "SHOW COLUMNS FROM ".$this->name;
+            $result = $this->conn->query($sql2);
+            if($result && $result->num_rows) {
+                while($row = $result->fetch_assoc())
+                $objs[] = new Column($this->conn, $this->name, $this->dbName, $row["Field"], $row["Type"], $row["Null"], $row["Key"], $row["Default"], $row["Extra"], null, null);
+                return $objs;
+            }
+
         }
         
 
@@ -52,7 +118,7 @@ namespace marianojwl\GenericMySqlCRUD {
         public function getRecordsHTML() {
             $this->query("SELECT * FROM ".$this->name);
             $html = '';
-            $html .= '<table class="table table-dark">' . PHP_EOL;
+            $html .= '<table class="table table-dark table-responsive">' . PHP_EOL;
             $html .= '<thead>' . PHP_EOL;
             $html .= '<tr>';
             foreach($this->columns as $col) {
@@ -87,7 +153,7 @@ namespace marianojwl\GenericMySqlCRUD {
         public function getFormHTML( $record = [] ) {
             
             $html = '<form method="POST" action="?table='.$this->name.'&action='.(empty($record)?'insert':'update').'">';
-            $html .= '<table class="table table-dark">' . PHP_EOL;
+            $html .= '<table class="table table-dark table-responsive">' . PHP_EOL;
             $html .= '<thead>' . PHP_EOL;
             $html .= '<tr>' . PHP_EOL;
             $html .= '<td>Field</td>' . PHP_EOL;
@@ -104,7 +170,7 @@ namespace marianojwl\GenericMySqlCRUD {
             }
             $html .= '</tbody>' . PHP_EOL;
             $html .= '</table>';
-            $html .= '<input type="submit" value="Save" />' . PHP_EOL;
+            $html .= '<input type="submit" value="Save" class="btn btn-primary" />' . PHP_EOL;
             $html .= '</form>';
             
             return $html;
@@ -155,7 +221,7 @@ namespace marianojwl\GenericMySqlCRUD {
                         return $element !== null;
                     } )
             ) .")";
-            echo $sql;
+            //echo $sql;
             $this->conn->query($sql);
         }
         public function renderForm($formValues = []) {
