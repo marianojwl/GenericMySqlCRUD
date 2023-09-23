@@ -13,14 +13,17 @@ namespace marianojwl\GenericMySqlCRUD {
          * @param string $password Password.
          * @param string $name Database name.
          */
-        public function __construct(string $host, string $user, string $password , string $name) {
+        public function __construct(string $host, string $user, string $password , string $name, array $ignore = []) {
             $this->conn = new \mysqli($host, $user, $password , $name);
             $this->name = $name;
             $this->tables = [];
+            $this->ignoredTables = [];
             $tableNames = $this->getTableNames();
             foreach($tableNames as $tn)
-                $this->tables[] = new Table($this->conn, $tn);
+                if(!in_array($tn,$ignore)) 
+                    $this->tables[] = new Table($this->conn, $tn);
         }
+
         public function getTables() {
             return $this->tables;
         }

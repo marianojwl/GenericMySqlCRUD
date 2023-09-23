@@ -5,7 +5,7 @@ spl_autoload_register(function ($c) { $f = 'src/' .  explode("\\",$c)[2]  . '.ph
 use marianojwl\GenericMySqlCRUD\Database;
 use marianojwl\GenericMySqlCRUD\Table;
 //$table = new Table("muvidb","peliculas");
-$db = new Database("localhost","root","","muvidb");
+$db = new Database("localhost","root","","muvidb", ["afiches_alta"] );
 ?>
 <html lang="en">
 <head>
