@@ -25,11 +25,11 @@ namespace marianojwl\GenericMySqlCRUD {
             $html = '';
             $result = $this->conn->query("SELECT * FROM ".$this->name);
             while($row = $result->fetch_assoc()) {
-                $html .= '<option value=""';
+                $html .= '<option value="'.$row[$this->primaryKey].'"';
                 if($selected == $row[$this->primaryKey])
                     $html .= ' selected="selected"';
                 $html .= '>';
-                $html .= implode(" - ", $row);
+                $html .= substr(implode(" - ", $row ),0,40) . "..." ;
                 $html .= '</option>' . PHP_EOL;
             }
 
@@ -175,53 +175,40 @@ namespace marianojwl\GenericMySqlCRUD {
             
             return $html;
         }
-
+        public function getColmunsExpressionForInsertQuery($post = null) {
+            return array_filter( 
+                array_map(
+                    function($c) use ($post) { return $c->getExpressionForQuery($post); },
+                    $this->columns) ,
+                    function($element) {
+                        return $element !== null;
+                    } );
+        }
         public function insert() {
             $sql = "INSERT INTO ".$this->name." ";
-            $sql .= "(". implode(", ", array_filter( 
-                array_map(
-                    function($c) {
-                        if($c->isPrimaryKey())
-                            return null;
-                        else
-                            return $c->getField();
-                    },
-                    $this->columns) ,
-                    function($element) {
-                        return $element !== null;
-                    } )
-            ) .")";
-            $sql .= " VALUES";
-            $sql .= "(". implode(", ", array_filter( 
-                array_map(
-                    function($c) {
-                        if($c->isPrimaryKey())
-                            return null;
-                        else {
-                            $val = $this->conn->real_escape_string($_POST[$c->getField()]);
-                            if( empty($val) && $c->getDefault() ) {
-                                switch($c->getDefault()) {
-                                    case "current_timestamp()":
-                                        return "CURRENT_TIMESTAMP";
-                                        break;
-                                    default:
-                                        return "'".$c->getDefault()."'";
-                                    break;
-                                }
-                            } else {
-                                return "'".$val."'";
-                            }
-                        }
+            $sql .= "(";
+            $sql .= implode(", ", $this->getColmunsExpressionForInsertQuery());
+            $sql .= ") VALUES (";
+            $sql .= implode(", ", $this->getColmunsExpressionForInsertQuery($_POST));
+            $sql .= ")";
+            echo $sql;
+            $this->conn->query($sql);
+        }
 
-                            
-                            
-                    },
-                    $this->columns) ,
-                    function($element) {
-                        return $element !== null;
-                    } )
-            ) .")";
-            //echo $sql;
+        public function update() {
+            $keyValue = (int) $_POST[$this->primaryKey];
+            $sql = "UPDATE ".$this->name." SET ";
+            $sql .= implode(", ", array_filter( array_map(function($column) {
+                if( ! $column->isPrimaryKey() )
+                    return $column->getExpressionForQuery() . "=" . $column->getExpressionForQuery($_POST);
+            }, $this->columns) , function($elemntToFilrer) { return $elemntToFilrer !== null; } ) );
+            $sql .= " WHERE ".$this->primaryKey."='".$keyValue."'";
+            echo $sql;
+            $this->conn->query($sql);
+        }
+        public function delete() {
+            $keyValue = (int) $_GET[$this->primaryKey];
+            $sql = "DELETE FROM ".$this->name." WHERE ".$this->primaryKey."='".$keyValue."'";
             $this->conn->query($sql);
         }
         public function renderForm($formValues = []) {

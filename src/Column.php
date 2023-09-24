@@ -32,7 +32,32 @@ namespace marianojwl\GenericMySqlCRUD {
             $this->ForeignKeyField = $ForeignKeyField;
         }
 
-
+        public function getExpressionForQuery($post = null) {
+            if($this->isPrimaryKey())
+                return null;
+            else {
+                if($post === null)
+                    return $this->getField();
+                else {
+                    $val = $this->conn->real_escape_string($post[$this->getField()]);
+                    if( empty($val) && $this->getDefault() ) {
+                        switch($this->getDefault()) {
+                            case "current_timestamp()":
+                                return "CURRENT_TIMESTAMP";
+                                break;
+                            case "NULL":
+                                return "NULL";
+                                break;
+                            default:
+                                return "'".$this->getDefault()."'";
+                            break;
+                        }
+                    } else {
+                        return "'".$val."'";
+                    }
+                }
+            } 
+        }
         public function getFormField($value = ""){
             if($this->ForeignKeyTable && $this->ForeignKeyField) {
                 $table = new Table($this->conn, $this->ForeignKeyTable, $this->dbName);
@@ -77,7 +102,9 @@ namespace marianojwl\GenericMySqlCRUD {
             $html .= ' type="'.$formType.'"';
             $html .= ' name="'.$this->Field.'"';
             $html .= ' value="'.$value.'"';
-            if($this->isPrimaryKey())
+            if($this->isPrimaryKey() )
+                $html .= ' readonly';
+            if($this->Extra == 'on update current_timestamp()')
                 $html .= ' disabled="disabled"';
             $html .= ' />';
 

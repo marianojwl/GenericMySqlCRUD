@@ -5,8 +5,8 @@ spl_autoload_register(function ($c) { $f = 'src/' .  explode("\\",$c)[2]  . '.ph
 use marianojwl\GenericMySqlCRUD\Database;
 use marianojwl\GenericMySqlCRUD\Table;
 //$table = new Table("muvidb","peliculas");
-//$db = new Database("localhost","root","","muvidb", ["afiches_alta"] );
-$db = new Database("localhost","root","","mediaprocessor");
+$db = new Database("localhost","root","","muvidb", ["afiches_alta"] );
+//$db = new Database("localhost","root","","mediaprocessor");
 ?>
 <html lang="en">
 <head>
@@ -28,7 +28,7 @@ $tables = $db->getTables();
 ?>
 <nav class="navbar navbar-expand-sm bg-dark navbar-dark">
   <div class="container-fluid">
-    <a class="navbar-brand" href="#"><?=$db->getName()?></a>
+    <a class="navbar-brand" href="?"><?=$db->getName()?></a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#collapsibleNavbar">
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -67,6 +67,12 @@ if($table !== null) {
                 break;
             case "insert":
                     $table->insert();
+                break;
+            case "update":
+                    $table->update();
+                break;
+            case "delete":
+                    $table->delete();
                 break;
         }
         ?>
