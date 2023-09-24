@@ -3,9 +3,10 @@
 spl_autoload_register(function ($c) { $f = 'src/' .  explode("\\",$c)[2]  . '.php'; if (file_exists($f)) require_once $f; });
 
 use marianojwl\GenericMySqlCRUD\Database;
-//$table = new Table("muvidb","peliculas");
+/**
+ * ONLY SETUP
+ */
 $db = new Database("localhost","root","","muvidb", ["afiches_alta"] );
-//$db = new Database("localhost","root","","mediaprocessor");
 ?>
 <html lang="en" data-bs-theme="dark">
 <head>
@@ -14,7 +15,6 @@ $db = new Database("localhost","root","","muvidb", ["afiches_alta"] );
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
     <title><?=$db->getName()?></title>
-
 </head>
 <body>
 <!-- NAV BAR / -->
@@ -38,21 +38,33 @@ $tables = $db->getTables();
   </div>
 </nav>
 <!-- / NAV BAR -->
+
+<!-- MAIN SECTION -->
 <main>
+<div class="container mt-3">
 <?php
+/**
+ * DETERMINES WHICH TABLE WE ARE WOKING ON
+ */
 $tableName = $_GET["table"] ?? "";
 $table = $db->getTable($tableName);
 if($table !== null) {
 ?>
-    <div class="container mt-3">
+    
         <?php
         switch($_GET['action']??"") {
-            default:
-                echo '<h2>New record for '.$table->getName().'</h2>' . PHP_EOL;
-                $table->tagClass("table table-striped table-bordered table-responsive")->renderForm(); 
+            case "new":
+                echo '<h3 class="mb-3">New record for '.$table->getName().'</h3>' . PHP_EOL;
+                $table->tagClass("table table-striped table-bordered")->renderForm(); 
+                break;
+            case "view":
+                echo '<h3 class="mb-3">View record from '.$table->getName().'</h3>' . PHP_EOL;
+                $keyValue = $_GET[ $table->getPrimaryKey() ];
+                $formValues = $table->getRecordByPrimaryKey( $keyValue );
+                $table->renderForm( $formValues );
                 break;
             case "edit":
-                echo '<h2>Edit record from '.$table->getName().'</h2>' . PHP_EOL;
+                echo '<h3 class="mb-3">Edit record from '.$table->getName().'</h3>' . PHP_EOL;
                 $keyValue = $_GET[ $table->getPrimaryKey() ];
                 $formValues = $table->getRecordByPrimaryKey( $keyValue );
                 $table->renderForm( $formValues );
@@ -66,19 +78,36 @@ if($table !== null) {
             case "delete":
                     $table->delete();
                 break;
+            default:
+            ?>
+            <h3 class="mb-3">Records for <?=$table->getName()?></h3>
+            <div class="my-3"><a class="btn btn-primary" href="?table=<?=$table->getName()?>&action=new">Add New</a></div>
+            <div class="table-responsive">
+            <?php $table->tagClass("table table-striped table-bordered table-responsive")->renderRecords(); ?> 
+            </div>
+            <?php
+                break;
         }
-        ?>
-        
-    </div>
-    <div class="container mt-3">
-        <h2>Records for <?=$table->getName()?></h2>
-        <?php $table->tagClass("table table-striped table-bordered table-responsive")->renderRecords(); ?> 
-    </div>  
+        ?>        
+    
+
 
 <?php
+} else {
+  ?>
+  <h3 class="mb-3">Available Tables</h3>
+<div class="row">
+  <?php
+  foreach($db->getTables() as $table)
+   echo '<div class="col">' . $table->tagClass("table table-striped table-bordered table-responsive")->showInfo() . '</div>' . PHP_EOL;
+  ?>
+</div>
+  <?php
 }
 ?>
+</div>
 </main>
+<!-- / MAIN SECTION -->
 </body>
 </html>
 

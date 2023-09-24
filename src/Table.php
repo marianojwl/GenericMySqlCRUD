@@ -23,12 +23,33 @@ namespace marianojwl\GenericMySqlCRUD {
             if($col->isPrimaryKey())
                 $this->primaryKey = $col->getField();
         }
+        public function getTotalRecords() {
+            $r = $this->conn->query("SELECT COUNT(*) FROM ".$this->name);
+            $row = $r->fetch_array();
+            return $row[0];
+        }
         public function tagClass(string $class) : self {
             $this->tagClass = $class;
             return $this;
         }
         public function getPrimaryKey() {
             return $this->primaryKey;
+        }
+        public function showInfo() {
+            $html = '<table class="'.$this->tagClass.'">';
+            $html .= '<thead>';
+            $html .= '<tr><th><a href="?table='.$this->name.'">'.$this->getName().'</a></th></tr>' . PHP_EOL;
+            $html .= '</thead>';
+            $html .= '<tbody>';
+            foreach($this->columns as $column)
+                $html .= '<tr><td>'.$column->getField().'</td></tr>' . PHP_EOL;
+            $html .= '</tbody>';
+            $html .= '<tfoot>';
+            $html .= '<tr><th>Total: '.$this->getTotalRecords().' records</th></tr>' . PHP_EOL;
+            $html .= '</tfoot>';
+            $html .= '</table>' . PHP_EOL;
+
+            return $html;
         }
         public function getSelectOptions($selected = null) {
             $html = '';
@@ -131,12 +152,13 @@ namespace marianojwl\GenericMySqlCRUD {
             $html .= '<thead>' . PHP_EOL;
             $html .= '<tr>';
             foreach($this->columns as $col) {
-                $html .= '<td>';
+                $html .= '<th>';
                 $html .= $col->getField();
-                $html .= '</td>';
+                $html .= '</th>';
             }
-            $html .= '<td>Edit</td>' ;
-            $html .= '<td>Del.</td>';
+            $html .= '<th>View</th>' ;
+            $html .= '<th>Edit</th>' ;
+            $html .= '<th>Del.</th>';
             $html .= '</tr>' . PHP_EOL;
             $html .= '</thead>' . PHP_EOL;
             $html .= '<tbody>' . PHP_EOL;
@@ -147,6 +169,7 @@ namespace marianojwl\GenericMySqlCRUD {
                     $html .= $record[$col->getField()];
                     $html .= '</td>';
                 }
+                $html .= '<td><a href="?table='.$this->name.'&action=view&id='.$record[ $this->primaryKey ].'">View</a></td>';
                 $html .= '<td><a href="?table='.$this->name.'&action=edit&id='.$record[ $this->primaryKey ].'">Edit</a></td>';
                 $html .= '<td><a href="?table='.$this->name.'&action=delete&id='.$record[ $this->primaryKey ].'">Del.</a></td>';
                 $html .= '</tr>' . PHP_EOL;
