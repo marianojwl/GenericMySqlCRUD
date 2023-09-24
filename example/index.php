@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <?php
-spl_autoload_register(function ($c) { $f = 'src/' .  explode("\\",$c)[2]  . '.php'; if (file_exists($f)) require_once $f; });
+spl_autoload_register(function ($c) { $f = '../' .  explode("\\",$c)[2]  . '.php'; if (file_exists($f)) require_once $f; });
 
 use marianojwl\GenericMySqlCRUD\Database;
 /**
