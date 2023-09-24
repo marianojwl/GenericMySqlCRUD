@@ -1,5 +1,8 @@
 <?php
 namespace marianojwl\GenericMySqlCRUD {
+
+    use Exception;
+
     class Table {
         protected $dbName;
         protected $name;
@@ -8,15 +11,21 @@ namespace marianojwl\GenericMySqlCRUD {
         protected $records;
         protected $primaryKey;
         protected $formValues;
+        protected $tagClass;
 
         public function __construct($conn, $name, $dbName) {
             $this->dbName = $dbName;
             $this->name = $name;
             $this->conn = $conn;
+            $this->tagClass = '';
             $this->columns = $this->getAllColumns();
             foreach($this->columns as $col)
             if($col->isPrimaryKey())
                 $this->primaryKey = $col->getField();
+        }
+        public function tagClass(string $class) : self {
+            $this->tagClass = $class;
+            return $this;
         }
         public function getPrimaryKey() {
             return $this->primaryKey;
@@ -100,7 +109,7 @@ namespace marianojwl\GenericMySqlCRUD {
         }
         
 
-        private function query($sql) {
+        private function query2($sql) {
             $this->records = [];
             $result = $this->conn->query($sql);
             while($row = $result->fetch_assoc())
@@ -116,9 +125,9 @@ namespace marianojwl\GenericMySqlCRUD {
         }
 
         public function getRecordsHTML() {
-            $this->query("SELECT * FROM ".$this->name);
+            $this->query2("SELECT * FROM ".$this->name);
             $html = '';
-            $html .= '<table class="table table-dark table-responsive">' . PHP_EOL;
+            $html .= '<table class="'.$this->tagClass.'">' . PHP_EOL;
             $html .= '<thead>' . PHP_EOL;
             $html .= '<tr>';
             foreach($this->columns as $col) {
@@ -153,7 +162,7 @@ namespace marianojwl\GenericMySqlCRUD {
         public function getFormHTML( $record = [] ) {
             
             $html = '<form method="POST" action="?table='.$this->name.'&action='.(empty($record)?'insert':'update').'">';
-            $html .= '<table class="table table-dark table-responsive">' . PHP_EOL;
+            $html .= '<table class="'.$this->tagClass.'">' . PHP_EOL;
             $html .= '<thead>' . PHP_EOL;
             $html .= '<tr>' . PHP_EOL;
             $html .= '<td>Field</td>' . PHP_EOL;
@@ -184,6 +193,13 @@ namespace marianojwl\GenericMySqlCRUD {
                         return $element !== null;
                     } );
         }
+        private function query($sql) {
+            try {
+                $this->conn->query($sql);
+            } catch(Exception $e) {
+                echo 'Error: ' . $e->getMessage();
+            }
+        }
         public function insert() {
             $sql = "INSERT INTO ".$this->name." ";
             $sql .= "(";
@@ -191,25 +207,27 @@ namespace marianojwl\GenericMySqlCRUD {
             $sql .= ") VALUES (";
             $sql .= implode(", ", $this->getColmunsExpressionForInsertQuery($_POST));
             $sql .= ")";
-            echo $sql;
-            $this->conn->query($sql);
+            //echo $sql;
+
+            $this->query($sql);
         }
 
         public function update() {
             $keyValue = (int) $_POST[$this->primaryKey];
             $sql = "UPDATE ".$this->name." SET ";
             $sql .= implode(", ", array_filter( array_map(function($column) {
-                if( ! $column->isPrimaryKey() )
+                if( !( $column->isPrimaryKey() || $column->getExtra() == 'on update current_timestamp()' ) )
                     return $column->getExpressionForQuery() . "=" . $column->getExpressionForQuery($_POST);
             }, $this->columns) , function($elemntToFilrer) { return $elemntToFilrer !== null; } ) );
             $sql .= " WHERE ".$this->primaryKey."='".$keyValue."'";
-            echo $sql;
-            $this->conn->query($sql);
+            //echo $sql;
+
+            $this->query($sql);
         }
         public function delete() {
             $keyValue = (int) $_GET[$this->primaryKey];
             $sql = "DELETE FROM ".$this->name." WHERE ".$this->primaryKey."='".$keyValue."'";
-            $this->conn->query($sql);
+            $this->query($sql);
         }
         public function renderForm($formValues = []) {
             echo $this->getFormHTML( $formValues );

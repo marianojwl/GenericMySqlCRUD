@@ -33,7 +33,7 @@ namespace marianojwl\GenericMySqlCRUD {
         }
 
         public function getExpressionForQuery($post = null) {
-            if($this->isPrimaryKey())
+            if($this->isPrimaryKey() || $this->Extra == 'on update current_timestamp()')
                 return null;
             else {
                 if($post === null)
