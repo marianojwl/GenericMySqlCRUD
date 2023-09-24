@@ -12,6 +12,7 @@ namespace marianojwl\GenericMySqlCRUD {
          * @param string $user Username.
          * @param string $password Password.
          * @param string $name Database name.
+         * @param array $ignore Array containing table names to ignore.
          */
         public function __construct(string $host, string $user, string $password , string $name, array $ignore = []) {
             $this->conn = new \mysqli($host, $user, $password , $name);

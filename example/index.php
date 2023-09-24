@@ -1,11 +1,25 @@
 <!DOCTYPE html>
 <?php
+/**
+ * AUTO LOADER
+ */
 spl_autoload_register(function ($c) { $f = '../' .  explode("\\",$c)[2]  . '.php'; if (file_exists($f)) require_once $f; });
 
-use marianojwl\GenericMySqlCRUD\Database;
 /**
- * ONLY SETUP
+ * ============================================================================|
+ * >> SETUP                                                                    |
+ * ============================================================================|
+ * @param mixed $host Usually 'localhost'                                      |
+ * @param string $user Username.                                               |
+ * @param string $password Password.                                           |
+ * @param string $name Database name.                                          |
+ * @param array $ignore Array containing table names to ignore.                |
+ *                                                                             |
+ * Example:                                                                    |
+ * $db = new Database("localhost","root","","myDB", ["table_to_be_ignored"] ); |
+ * ============================================================================|
  */
+use marianojwl\GenericMySqlCRUD\Database;
 $db = new Database("localhost","root","","muvidb", ["afiches_alta"] );
 ?>
 <html lang="en" data-bs-theme="dark">
