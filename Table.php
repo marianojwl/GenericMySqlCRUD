@@ -12,16 +12,22 @@ namespace marianojwl\GenericMySqlCRUD {
         protected $primaryKey;
         protected $formValues;
         protected $tagClass;
+        protected $customActions;
 
         public function __construct($conn, $name, $dbName) {
             $this->dbName = $dbName;
             $this->name = $name;
             $this->conn = $conn;
             $this->tagClass = '';
+            $this->customActions = [];
             $this->columns = $this->getAllColumns();
             foreach($this->columns as $col)
             if($col->isPrimaryKey())
                 $this->primaryKey = $col->getField();
+        }
+        public function customAction(string $action) : self {
+            $this->customActions[] = $action;
+            return $this;
         }
         public function getTotalRecords() {
             $r = $this->conn->query("SELECT COUNT(*) FROM ".$this->name);
@@ -156,6 +162,8 @@ namespace marianojwl\GenericMySqlCRUD {
                 $html .= $col->getField();
                 $html .= '</th>';
             }
+            foreach($this->customActions as $ca)
+                $html .= '<th>'.$ca.'</th>';    
             $html .= '<th>View</th>' ;
             $html .= '<th>Edit</th>' ;
             $html .= '<th>Del.</th>';
@@ -169,6 +177,8 @@ namespace marianojwl\GenericMySqlCRUD {
                     $html .= $record[$col->getField()];
                     $html .= '</td>';
                 }
+                foreach($this->customActions as $ca)
+                    $html .= '<td><a href="?table='.$this->name.'&action='.$ca.'&id='.$record[ $this->primaryKey ].'">'.$ca.'</a></td>';
                 $html .= '<td><a href="?table='.$this->name.'&action=view&id='.$record[ $this->primaryKey ].'">View</a></td>';
                 $html .= '<td><a href="?table='.$this->name.'&action=edit&id='.$record[ $this->primaryKey ].'">Edit</a></td>';
                 $html .= '<td><a href="?table='.$this->name.'&action=delete&id='.$record[ $this->primaryKey ].'">Del.</a></td>';
