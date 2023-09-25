@@ -12,6 +12,7 @@ namespace marianojwl\GenericMySqlCRUD {
         protected $Extra;
         protected $ForeignKeyTable;
         protected $ForeignKeyField;
+        protected $valueWrapper;
 
         public function isPrimaryKey() {
             return $this->Key == "PRI";
@@ -30,6 +31,7 @@ namespace marianojwl\GenericMySqlCRUD {
             $this->Extra = $Extra;
             $this->ForeignKeyTable = $ForeignKeyTable;
             $this->ForeignKeyField = $ForeignKeyField;
+            //$this->valueWrapper = '{{value}}';
         }
 
         public function getExpressionForQuery($post = null) {
@@ -134,7 +136,12 @@ namespace marianojwl\GenericMySqlCRUD {
         public function getExtra() {
             return $this->Extra;
         }
-
+        public function wrapValue(string $value) : string {
+            if(empty( $this->valueWrapper ))
+                return $value;
+            else
+                return str_replace('{{value}}', $value, $this->valueWrapper);
+        }
         public function getForeignKeyTable() {
             return $this->ForeignKeyTable;
         }
@@ -175,5 +182,23 @@ namespace marianojwl\GenericMySqlCRUD {
         public function setForeignKeyField($ForeignKeyField) {
             $this->ForeignKeyField = $ForeignKeyField;
         }
+        /**
+         * Get the value of valueWrapper
+         */
+        public function getValueWrapper()
+        {
+                return $this->valueWrapper;
+        }
+
+        /**
+         * Set the value of valueWrapper
+         */
+        public function setValueWrapper($valueWrapper): self
+        {
+                $this->valueWrapper = $valueWrapper;
+
+                return $this;
+        }
     }
+
 }

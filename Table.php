@@ -33,6 +33,13 @@ namespace marianojwl\GenericMySqlCRUD {
             return null;
         }
 
+        public function column($columnName) : Column | null {
+            foreach($this->columns as $column)
+                if($column->getField() == $columnName)
+                    return $column;
+            return null;
+        }
+
 
         public function customAction(string $action) : self {
             $this->customActions[] = $action;
@@ -237,7 +244,7 @@ namespace marianojwl\GenericMySqlCRUD {
                 foreach($this->columns as $col) {
                     $html .= '<tr>' . PHP_EOL;
                     $html .= '<td>'.$col->getField().'</td>' . PHP_EOL;
-                    $html .= '<td><strong>'.$row[ $col->getField() ].'</strong></td>' . PHP_EOL;   
+                    $html .= '<td>'.$col->wrapValue( $row[ $col->getField() ] ).'</td>' . PHP_EOL;   
                     $html .= '</tr>' . PHP_EOL;
                 }
                 $html .= '</tbody>' . PHP_EOL;

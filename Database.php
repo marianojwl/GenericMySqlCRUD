@@ -36,6 +36,9 @@ namespace marianojwl\GenericMySqlCRUD {
                     return $table;
             return null;
         }
+        public function table($tableName) : Table | null {
+            return $this->getTable($tableName);
+        }
         public function getTableNames() {
             $names = [];
             $sql = "SHOW TABLES";
