@@ -25,6 +25,15 @@ namespace marianojwl\GenericMySqlCRUD {
             if($col->isPrimaryKey())
                 $this->primaryKey = $col->getField();
         }
+
+        public function getColumnReferencingTable(string $tableName) {
+            foreach($this->columns as $column)
+                if($column->getForeignKeyTable() == $tableName)
+                    return $column;
+            return null;
+        }
+
+
         public function customAction(string $action) : self {
             $this->customActions[] = $action;
             return $this;
@@ -34,7 +43,7 @@ namespace marianojwl\GenericMySqlCRUD {
             $row = $r->fetch_array();
             return $row[0];
         }
-        public function tagClass(string $class) : self {
+        public function setTagClass(string $class) : self {
             $this->tagClass = $class;
             return $this;
         }
@@ -191,6 +200,53 @@ namespace marianojwl\GenericMySqlCRUD {
         public function renderRecords() {
             echo $this->getRecordsHTML();
         }
+        public function getReferrerRecordSheets(int $keyValue, string $referredTable,Table $rt) {
+            $html = '<div class="col">'.PHP_EOL;
+            $html .= '<h4>'.$rt->getName().'</h4>'.PHP_EOL;
+            $field = $this->getForeignKeyFieldReferring($referredTable, $rt);
+            $sql = "SELECT * FROM ".$rt->getName()." WHERE ".$field."='".$keyValue."'";
+            $result = $this->query($sql);
+            while($row = $result->fetch_assoc()) {
+                $html .= '<div class="row">'.PHP_EOL;
+                $html .= $this->getRecordSheet($row[$this->primaryKey]).PHP_EOL;
+                $html .= '</div><!-- row -->'.PHP_EOL;
+            }
+            $html .= '</div><!-- col -->'.PHP_EOL;
+            return $html;
+        }
+        public function getForeignKeyFieldReferring(string $referredTable, Table $rt) {
+            foreach($rt->columns as $column)
+                if($column->getForeignKeyTable() == $referredTable)
+                    return $column->getField();
+            return null;
+        }
+        public function getRecordSheet(int $primaryKeyValue) {
+            $html = '';
+            $sql = "SELECT * FROM ".$this->name." WHERE ".$this->primaryKey."='".$primaryKeyValue."'";
+            $result = $this->query($sql);
+            if($row = $result->fetch_assoc()) {
+                $html .= '<table class="'.$this->tagClass.'">' . PHP_EOL;
+                $html .= '<thead>' . PHP_EOL;
+                $html .= '<tr>' . PHP_EOL;
+                $html .= '<th>Field</th>' . PHP_EOL;
+                $html .= '<th>Value</th>' . PHP_EOL;
+                $html .= '</tr>' . PHP_EOL;
+                $html .= '</thead>' . PHP_EOL;
+                $html .= '<tbody>' . PHP_EOL;
+    
+                foreach($this->columns as $col) {
+                    $html .= '<tr>' . PHP_EOL;
+                    $html .= '<td>'.$col->getField().'</td>' . PHP_EOL;
+                    $html .= '<td><strong>'.$row[ $col->getField() ].'</strong></td>' . PHP_EOL;   
+                    $html .= '</tr>' . PHP_EOL;
+                }
+                $html .= '</tbody>' . PHP_EOL;
+                $html .= '</table>';
+            }
+            
+            $html .= '';
+            return $html;
+        }
 
         public function getFormHTML( $record = [] ) {
             
@@ -228,17 +284,19 @@ namespace marianojwl\GenericMySqlCRUD {
         }
         private function query($sql) {
             try {
-                $this->conn->query($sql);
+                return $this->conn->query($sql);
             } catch(Exception $e) {
                 echo 'Error: ' . $e->getMessage();
             }
         }
-        public function insert() {
+        public function insert($post = null) {
+            if($post === null)
+                $post = $_POST;
             $sql = "INSERT INTO ".$this->name." ";
             $sql .= "(";
             $sql .= implode(", ", $this->getColmunsExpressionForInsertQuery());
             $sql .= ") VALUES (";
-            $sql .= implode(", ", $this->getColmunsExpressionForInsertQuery($_POST));
+            $sql .= implode(", ", $this->getColmunsExpressionForInsertQuery($post));
             $sql .= ")";
             //echo $sql;
 

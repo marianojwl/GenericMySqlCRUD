@@ -44,6 +44,17 @@ namespace marianojwl\GenericMySqlCRUD {
                 $names[] = $row[0]; 
             return $names;            
         }
+        public function getReferencialTables(Table $selectedTable) {
+            $objs = [];
+            foreach($this->tables as $table)
+                if($table->getName() != $selectedTable->getName()) {
+                    $column = $table->getColumnReferencingTable( $selectedTable->getName() );
+                    if($column !== null)
+                        $objs[] = $table;
+                }
+
+            return $objs;
+        }
         /**
          * Get the value of name
          */

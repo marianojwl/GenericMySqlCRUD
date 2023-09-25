@@ -69,13 +69,29 @@ if($table !== null) {
         switch($_GET['action']??"") {
             case "new":
                 echo '<h3 class="mb-3">New record for '.$table->getName().'</h3>' . PHP_EOL;
-                $table->tagClass("table table-striped table-bordered")->renderForm(); 
+                $table->setTagClass("table table-striped table-bordered")->renderForm(); 
                 break;
             case "view":
                 echo '<h3 class="mb-3">View record from '.$table->getName().'</h3>' . PHP_EOL;
                 $keyValue = $_GET[ $table->getPrimaryKey() ];
-                $formValues = $table->getRecordByPrimaryKey( $keyValue );
-                $table->renderForm( $formValues );
+                //$formValues = $table->getRecordByPrimaryKey( $keyValue );
+                //$table->renderForm( $formValues );
+                echo '<div class="row">'.PHP_EOL;
+                echo '<div class="col">'.PHP_EOL;
+                echo '<h4>Record Sheet</h4>'.PHP_EOL;
+                echo '<div class="table-responsive">'.PHP_EOL;
+                echo $table->setTagClass("table table-bordered table-striped")->getRecordSheet($keyValue);
+                echo '</div><!-- table-responsive -->'.PHP_EOL;
+                echo '</div><!-- col -->'.PHP_EOL;
+
+                
+                foreach($db->getReferencialTables($table) as $rt) {
+                  echo '<div class="col">'.PHP_EOL;
+                  echo '<h4>Related Data</h4>'.PHP_EOL;
+                  echo $rt->setTagClass("table table-bordered table-striped")->getReferrerRecordSheets($keyValue, $table->getName(), $rt);
+                  echo '</div><!-- col -->'.PHP_EOL;
+                }
+                echo '</div><!-- row -->'.PHP_EOL;
                 break;
             case "edit":
                 echo '<h3 class="mb-3">Edit record from '.$table->getName().'</h3>' . PHP_EOL;
@@ -97,7 +113,7 @@ if($table !== null) {
             <h3 class="mb-3">Records for <?=$table->getName()?></h3>
             <div class="my-3"><a class="btn btn-primary" href="?table=<?=$table->getName()?>&action=new">Add New</a></div>
             <div class="table-responsive">
-            <?php $table->tagClass("table table-striped table-bordered table-responsive")->renderRecords(); ?> 
+            <?php $table->setTagClass("table table-striped table-bordered table-responsive")->renderRecords(); ?> 
             </div>
             <?php
                 break;
@@ -113,7 +129,7 @@ if($table !== null) {
 <div class="row">
   <?php
   foreach($db->getTables() as $table)
-   echo '<div class="col">' . $table->tagClass("table table-striped table-bordered table-responsive")->showInfo() . '</div>' . PHP_EOL;
+   echo '<div class="col">' . $table->setTagClass("table table-striped table-bordered table-responsive")->showInfo() . '</div>' . PHP_EOL;
   ?>
 </div>
   <?php
