@@ -22,7 +22,7 @@ namespace marianojwl\GenericMySqlCRUD {
             $tableNames = $this->getTableNames();
             foreach($tableNames as $tn)
                 if(!in_array($tn,$ignore)) 
-                    $this->tables[] = new Table($this->conn, $tn, $name);
+                    $this->tables[] = new Table($this->conn, $tn, $this);
         }
 
         public function getTables() {

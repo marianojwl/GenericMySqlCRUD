@@ -2,7 +2,8 @@
 namespace marianojwl\GenericMySqlCRUD {
     class Column {
         protected $conn;
-        protected $tableName;
+        protected $table;
+        //protected $tableName;
         protected $dbName;
         protected $Field;
         protected $Type;
@@ -13,15 +14,16 @@ namespace marianojwl\GenericMySqlCRUD {
         protected $ForeignKeyTable;
         protected $ForeignKeyField;
         protected $valueWrapper;
+        protected $listedValueWrapper;
 
         public function isPrimaryKey() {
             return $this->Key == "PRI";
         }
 
         // Constructor
-        public function __construct($conn, $tableName, $dbName, $Field, $Type, $Null, $Key, $Default, $Extra, $ForeignKeyTable, $ForeignKeyField) {
+        public function __construct($conn, Table $table, $dbName, $Field, $Type, $Null, $Key, $Default, $Extra, $ForeignKeyTable, $ForeignKeyField) {
             $this->conn = $conn;
-            $this->tableName = $tableName;
+            $this->table = $table;
             $this->dbName = $dbName;
             $this->Field = $Field;
             $this->Type = $Type;
@@ -60,9 +62,10 @@ namespace marianojwl\GenericMySqlCRUD {
                 }
             } 
         }
+
         public function getFormField($value = ""){
             if($this->ForeignKeyTable && $this->ForeignKeyField) {
-                $table = new Table($this->conn, $this->ForeignKeyTable, $this->dbName);
+                $table = $this->table->db()->getTable($this->ForeignKeyTable);
                 $html = '<select';
                 $html .= ' name="'.$this->Field.'"';
                 $html .= '>';
@@ -70,38 +73,43 @@ namespace marianojwl\GenericMySqlCRUD {
                 $html .= '</select>';
                 return $html;
             }
-            if($this->Type == "longtext") {
-                $html  = '<textarea';
-                $html .= ' name="'.$this->Field.'"';
-                $html .= '>';
-                $html .= $value;
-                $html .= '</textarea>';
-                return $html;
-            }
             @list($type,$size) = explode("(",$this->Type);
             $size = substr($size,0,-1);
-
-            $html = '<input ';
-            $formType = "text";
+            $html = '';
             switch($type) {
-                case "date":
-                    $formType = "date";
+                case "text":
+                case "json":
+                case "tinytext":
+                case "longtext":
+                    $html  .= '<textarea';
+                    $html .= ' name="'.$this->Field.'"';
+                    $html .= '>';
+                    $html .= $value;
+                    $html .= '</textarea>';
+                    return $html;
                     break;
                 case "int":
-                    $formType = "number";
+                    $html .= '<input ';
+                    $html .= ' type="number"';
+                    $html .= ' max="'.(10 ** $size - 1).'"';
                     break;
-            }
-            switch($formType) {
-                case "text":
-                case "password":
+                case "varchar":
+                    $html .= '<input ';
+                    $html .= ' type="text"';
                     $html .= ' maxlength="'.$size.'"';
                     break;
-                case "number":
-                    $html .= ' max="'.(10 ** $size - 1).'"';
+                case "date":
+                    $html .= '<input ';
+                    $html .= ' type="date"';
+                    $html .= ' maxlength="'.$size.'"';
+                    break;
+                default:
+                    $html .= '<input ';
+                    $html .= ' type="text"';
+                    $html .= ' maxlength="'.$size.'"';
                     break;
             }
 
-            $html .= ' type="'.$formType.'"';
             $html .= ' name="'.$this->Field.'"';
             $html .= ' value="'.$value.'"';
             if($this->isPrimaryKey() )
@@ -113,6 +121,9 @@ namespace marianojwl\GenericMySqlCRUD {
             return $html;
         }
         // Getters
+        public function table() : Table {
+            return $this->table;
+        }
         public function getField() {
             return $this->Field;
         }
@@ -141,6 +152,12 @@ namespace marianojwl\GenericMySqlCRUD {
                 return $value;
             else
                 return str_replace('{{value}}', $value, $this->valueWrapper);
+        }
+        public function wrapListedValue(string $value) : string {
+            if(empty( $this->listedValueWrapper ))
+                return $value;
+            else
+                return str_replace('{{value}}', $value, $this->listedValueWrapper);
         }
         public function getForeignKeyTable() {
             return $this->ForeignKeyTable;
@@ -199,6 +216,24 @@ namespace marianojwl\GenericMySqlCRUD {
 
                 return $this;
         }
+        /**
+         * Get the value of listedValueWrapper
+         */
+        public function getListedValueWrapper()
+        {
+                return $this->listedValueWrapper;
+        }
+
+        /**
+         * Set the value of listedValueWrapper
+         */
+        public function setListedValueWrapper($listedValueWrapper): self
+        {
+                $this->listedValueWrapper = $listedValueWrapper;
+
+                return $this;
+        }
     }
+
 
 }

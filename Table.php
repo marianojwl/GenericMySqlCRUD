@@ -4,7 +4,8 @@ namespace marianojwl\GenericMySqlCRUD {
     use Exception;
 
     class Table {
-        protected $dbName;
+        protected $db;
+        //protected $dbName;
         protected $name;
         protected $columns;
         protected $conn;
@@ -14,8 +15,8 @@ namespace marianojwl\GenericMySqlCRUD {
         protected $tagClass;
         protected $customActions;
 
-        public function __construct($conn, $name, $dbName) {
-            $this->dbName = $dbName;
+        public function __construct($conn, string $name, Database $db) {
+            $this->db = $db;
             $this->name = $name;
             $this->conn = $conn;
             $this->tagClass = '';
@@ -116,7 +117,7 @@ namespace marianojwl\GenericMySqlCRUD {
             FROM 
                 information_schema.COLUMNS
             WHERE 
-                TABLE_SCHEMA = '".$this->dbName."'
+                TABLE_SCHEMA = '".$this->db->getName()."'
                 AND TABLE_NAME = '".$this->name."'
         ) C
         LEFT JOIN (
@@ -127,7 +128,7 @@ namespace marianojwl\GenericMySqlCRUD {
             FROM 
                 information_schema.KEY_COLUMN_USAGE
             WHERE 
-                TABLE_SCHEMA = '".$this->dbName."' 
+                TABLE_SCHEMA = '".$this->db->getName()."' 
                 AND TABLE_NAME = '".$this->name."' 
                 AND REFERENCED_TABLE_NAME IS NOT NULL
         ) K
@@ -137,7 +138,7 @@ namespace marianojwl\GenericMySqlCRUD {
             $result = $this->conn->query($sql);
             if($result && $result->num_rows) {
                 while($row = $result->fetch_assoc())
-                $objs[] = new Column($this->conn, $this->name, $this->dbName, $row["Field"], $row["Type"], $row["Null"], $row["Key"], $row["Default"], $row["Extra"], $row["REFERENCED_TABLE_NAME"], $row["REFERENCED_COLUMN_NAME"]);
+                $objs[] = new Column($this->conn, $this, $this->db->getName(), $row["Field"], $row["Type"], $row["Null"], $row["Key"], $row["Default"], $row["Extra"], $row["REFERENCED_TABLE_NAME"], $row["REFERENCED_COLUMN_NAME"]);
                 return $objs;
             }
 
@@ -145,7 +146,7 @@ namespace marianojwl\GenericMySqlCRUD {
             $result = $this->conn->query($sql2);
             if($result && $result->num_rows) {
                 while($row = $result->fetch_assoc())
-                $objs[] = new Column($this->conn, $this->name, $this->dbName, $row["Field"], $row["Type"], $row["Null"], $row["Key"], $row["Default"], $row["Extra"], null, null);
+                $objs[] = new Column($this->conn, $this, $this->db->getName(), $row["Field"], $row["Type"], $row["Null"], $row["Key"], $row["Default"], $row["Extra"], null, null);
                 return $objs;
             }
 
@@ -166,9 +167,28 @@ namespace marianojwl\GenericMySqlCRUD {
             else
                 return null;
         }
-
+        public function getExtendedQuery() : string {
+            $sql = "SELECT ";
+            foreach($this->columns as $col) {
+                $sql .=  $this->name . "." . $col->getField() . ", ";
+                if($col->getForeignKeyTable() && $col->getForeignKeyField()) {
+                    $foreignFieldToShow = $col->table()->db()->table($col->getForeignKeyTable())->getColumns()[1]->getField();
+                    $sql .= $col->getForeignKeyTable() . "." . $foreignFieldToShow ." AS " . $col->getForeignKeyTable() . "_" . $foreignFieldToShow. ", ";
+                }
+                    
+            }
+            $sql = substr($sql, 0, -2);
+            $sql .= " FROM " . $this->name;
+            foreach($this->columns as $col) {
+                if($col->getForeignKeyTable() && $col->getForeignKeyField()) 
+                    $sql .= " LEFT JOIN " . $col->getForeignKeyTable() . " ON " . $col->getForeignKeyTable() . "." . $col->getForeignKeyField() ." = " . $this->name . "." . $col->getField() . " ";
+                
+            }
+            return $sql;
+        }
         public function getRecordsHTML() {
-            $this->query2("SELECT * FROM ".$this->name);
+            //$this->query2("SELECT * FROM ".$this->name);
+            $this->query2( $this->getExtendedQuery() );
             $html = '';
             $html .= '<table class="'.$this->tagClass.'">' . PHP_EOL;
             $html .= '<thead>' . PHP_EOL;
@@ -190,7 +210,7 @@ namespace marianojwl\GenericMySqlCRUD {
                 $html .= '<tr>';
                 foreach($this->columns as $col) {
                     $html .= '<td>';
-                    $html .= $record[$col->getField()];
+                    $html .= $col->wrapListedValue( $record[$col->getField()] );
                     $html .= '</td>';
                 }
                 foreach($this->customActions as $ca)
@@ -229,7 +249,7 @@ namespace marianojwl\GenericMySqlCRUD {
         }
         public function getRecordSheet(int $primaryKeyValue) {
             $html = '';
-            $sql = "SELECT * FROM ".$this->name." WHERE ".$this->primaryKey."='".$primaryKeyValue."'";
+            $sql = $this->getExtendedQuery()." WHERE " . $this->name . "." . $this->primaryKey . "='" . $primaryKeyValue . "'";
             $result = $this->query($sql);
             if($row = $result->fetch_assoc()) {
                 $html .= '<table class="'.$this->tagClass.'">' . PHP_EOL;
@@ -242,10 +262,21 @@ namespace marianojwl\GenericMySqlCRUD {
                 $html .= '<tbody>' . PHP_EOL;
     
                 foreach($this->columns as $col) {
-                    $html .= '<tr>' . PHP_EOL;
-                    $html .= '<td>'.$col->getField().'</td>' . PHP_EOL;
-                    $html .= '<td>'.$col->wrapValue( $row[ $col->getField() ] ).'</td>' . PHP_EOL;   
-                    $html .= '</tr>' . PHP_EOL;
+
+                    if($col->getForeignKeyTable() && $col->getForeignKeyField()) {
+                        $foreignFieldToShow = $col->table()->db()->table($col->getForeignKeyTable())->getColumns()[1]->getField();
+                        if($row[ $col->getForeignKeyTable() ."_". $foreignFieldToShow ]) {
+                            $html .= '<tr>' . PHP_EOL;
+                            $html .= '<td>'.$col->getForeignKeyTable() ."_". $foreignFieldToShow.'</td>' . PHP_EOL;
+                            $html .= '<td>'. $row[ $col->getForeignKeyTable() ."_". $foreignFieldToShow ] .'</td>' . PHP_EOL;   
+                            $html .= '</tr>' . PHP_EOL;
+                        }
+                    } else {
+                        $html .= '<tr>' . PHP_EOL;
+                        $html .= '<td>'.$col->getField().'</td>' . PHP_EOL;
+                        $html .= '<td>'.$col->wrapValue( $row[ $col->getField() ] ).'</td>' . PHP_EOL;   
+                        $html .= '</tr>' . PHP_EOL;
+                    }
                 }
                 $html .= '</tbody>' . PHP_EOL;
                 $html .= '</table>';
@@ -333,9 +364,12 @@ namespace marianojwl\GenericMySqlCRUD {
         /**
          * Get the value of dbName
          */
+        public function db() : Database {
+            return $this->db;
+        }
         public function getDbName()
         {
-                return $this->dbName;
+                return $this->db->getName();
         }
         /**
          * Get the value of name
@@ -343,6 +377,9 @@ namespace marianojwl\GenericMySqlCRUD {
         public function getName()
         {
                 return $this->name;
+        }
+        public function getColumns() {
+            return $this->columns;
         }
     }
 
