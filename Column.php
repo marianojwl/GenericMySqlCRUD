@@ -103,6 +103,13 @@ namespace marianojwl\GenericMySqlCRUD {
                     $html .= ' type="date"';
                     $html .= ' maxlength="'.$size.'"';
                     break;
+                case "tinyint":
+                    
+                    $html .= '<input ';
+                    $html .= ' type="checkbox"';
+                    if($value)
+                        $html .= ' checked="checked"';
+                    break;
                 default:
                     $html .= '<input ';
                     $html .= ' type="text"';
