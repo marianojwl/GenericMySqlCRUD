@@ -75,14 +75,15 @@ namespace marianojwl\GenericMySqlCRUD {
             return $html;
         }
         public function getSelectOptions($selected = null) {
-            $html = '';
+            $html = '<option>-</option>' . PHP_EOL;
             $result = $this->conn->query("SELECT * FROM ".$this->name);
-            while($row = $result->fetch_assoc()) {
+            while($row = $result->fetch_array()) {
                 $html .= '<option value="'.$row[$this->primaryKey].'"';
                 if($selected == $row[$this->primaryKey])
                     $html .= ' selected="selected"';
                 $html .= '>';
-                $html .= substr(implode(" - ", $row ),0,40) . "..." ;
+                $html .= $row[1] ;
+                //$html .= substr(implode(" - ", $row ),0,40) . "..." ;
                 $html .= '</option>' . PHP_EOL;
             }
 
@@ -194,9 +195,14 @@ namespace marianojwl\GenericMySqlCRUD {
             $html .= '<thead>' . PHP_EOL;
             $html .= '<tr>';
             foreach($this->columns as $col) {
-                $html .= '<th>';
-                $html .= $col->getField();
-                $html .= '</th>';
+                if($col->getForeignKeyTable() && $col->getForeignKeyField()) {
+                    $foreignFieldToShow = $col->table()->db()->table($col->getForeignKeyTable())->getColumns()[1]->getField();
+                    $html .= '<th>'.$col->getForeignKeyTable() ."_". $foreignFieldToShow.'</th>' . PHP_EOL;
+                } else {
+                    $html .= '<th>';
+                    $html .= $col->getField();
+                    $html .= '</th>';
+                }
             }
             foreach($this->customActions as $ca)
                 $html .= '<th>'.$ca.'</th>';    
@@ -209,12 +215,18 @@ namespace marianojwl\GenericMySqlCRUD {
             foreach($this->records as $record) {
                 $html .= '<tr>';
                 foreach($this->columns as $col) {
-                    $html .= '<td>';
-                    $html .= $col->wrapListedValue( $record[$col->getField()] );
-                    $html .= '</td>';
+                    if($col->getForeignKeyTable() && $col->getForeignKeyField()) {
+                        $foreignFieldToShow = $col->table()->db()->table($col->getForeignKeyTable())->getColumns()[1]->getField();
+                        $html .= '<td>'. $record[ $col->getForeignKeyTable() ."_". $foreignFieldToShow ] .'</td>' . PHP_EOL;   
+                    } else {
+                        $html .= '<td>';
+                        $html .= $col->wrapListedValue( $record[$col->getField()] );
+                        $html .= '</td>';
+                    }
                 }
+
                 foreach($this->customActions as $ca)
-                    $html .= '<td><a href="?table='.$this->name.'&action='.$ca.'&id='.$record[ $this->primaryKey ].'">'.$ca.'</a></td>';
+                $html .= '<td><a href="?table='.$this->name.'&action='.$ca.'&id='.$record[ $this->primaryKey ].'">'.$ca.'</a></td>';
                 $html .= '<td><a href="?table='.$this->name.'&action=view&id='.$record[ $this->primaryKey ].'">View</a></td>';
                 $html .= '<td><a href="?table='.$this->name.'&action=edit&id='.$record[ $this->primaryKey ].'">Edit</a></td>';
                 $html .= '<td><a href="?table='.$this->name.'&action=delete&id='.$record[ $this->primaryKey ].'">Del.</a></td>';

@@ -43,7 +43,7 @@ namespace marianojwl\GenericMySqlCRUD {
                 if($post === null)
                     return $this->getField();
                 else {
-                    $val = $this->conn->real_escape_string($post[$this->getField()]);
+                    $val = $this->conn->real_escape_string($post[$this->getField()]??"");
                     if( empty($val) && $this->getDefault() ) {
                         switch($this->getDefault()) {
                             case "current_timestamp()":
@@ -153,7 +153,9 @@ namespace marianojwl\GenericMySqlCRUD {
             else
                 return str_replace('{{value}}', $value, $this->valueWrapper);
         }
-        public function wrapListedValue(string $value) : string {
+        public function wrapListedValue($value) : string {
+            if($value === null)
+                return "";
             if(empty( $this->listedValueWrapper ))
                 return $value;
             else

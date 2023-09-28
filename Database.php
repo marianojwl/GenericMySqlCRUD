@@ -65,6 +65,9 @@ namespace marianojwl\GenericMySqlCRUD {
         {
                 return $this->name;
         }
+        public function getConn() {
+            return $this->conn;
+        }
         
     }
 
