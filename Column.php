@@ -43,22 +43,33 @@ namespace marianojwl\GenericMySqlCRUD {
                 if($post === null)
                     return $this->getField();
                 else {
-                    $val = $this->conn->real_escape_string($post[$this->getField()]??"");
-                    if( empty($val) && $this->getDefault() ) {
-                        switch($this->getDefault()) {
-                            case "current_timestamp()":
-                                return "CURRENT_TIMESTAMP";
-                                break;
-                            case "NULL":
-                                return "NULL";
-                                break;
-                            default:
-                                return "'".$this->getDefault()."'";
+                    switch($this->Type) {
+                        case "tinyint(1)":
+                            if(empty($post[$this->Field]))
+                                return "'0'";
+                            else
+                                return "'".$this->conn->real_escape_string($post[$this->getField()])."'";
                             break;
-                        }
-                    } else {
-                        return "'".$val."'";
+                        default:
+                            $val = $this->conn->real_escape_string($post[$this->getField()]??"");
+                            if( empty($val) && $this->getDefault() ) {
+                                switch($this->getDefault()) {
+                                    case "current_timestamp()":
+                                        return "CURRENT_TIMESTAMP";
+                                        break;
+                                    case "NULL":
+                                        return "NULL";
+                                        break;
+                                    default:
+                                        return "'".$this->getDefault()."'";
+                                    break;
+                                }
+                            } else {
+                                return "'".$val."'";
+                            }
+                            break;
                     }
+                    
                 }
             } 
         }
@@ -74,6 +85,8 @@ namespace marianojwl\GenericMySqlCRUD {
                 return $html;
             }
             @list($type,$size) = explode("(",$this->Type);
+            if($this->Type == "tinyint(1)")
+                $type = "bool";
             $size = substr($size,0,-1);
             $html = '';
             switch($type) {
@@ -89,6 +102,7 @@ namespace marianojwl\GenericMySqlCRUD {
                     return $html;
                     break;
                 case "int":
+                case "tinyint":
                     $html .= '<input ';
                     $html .= ' type="number"';
                     $html .= ' max="'.(10 ** $size - 1).'"';
@@ -103,12 +117,13 @@ namespace marianojwl\GenericMySqlCRUD {
                     $html .= ' type="date"';
                     $html .= ' maxlength="'.$size.'"';
                     break;
-                case "tinyint":
+                case "bool":
                     
                     $html .= '<input ';
                     $html .= ' type="checkbox"';
                     if($value)
                         $html .= ' checked="checked"';
+                    $value = 1;
                     break;
                 default:
                     $html .= '<input ';
