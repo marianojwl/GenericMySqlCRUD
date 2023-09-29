@@ -85,9 +85,28 @@ namespace marianojwl\GenericMySqlCRUD {
                 return $html;
             }
             @list($type,$size) = explode("(",$this->Type);
+            $size = substr($size,0,-1);
+
             if($this->Type == "tinyint(1)")
                 $type = "bool";
-            $size = substr($size,0,-1);
+
+            if($type == "enum") {
+                $html  = '<select';
+                $html .= ' name="'.$this->Field.'"';
+                $html .= '>'.PHP_EOL;
+                $html .= '<option>-</option>'.PHP_EOL;
+                $html .= implode(PHP_EOL,
+                    array_map(function($e) {
+                        return '<option value="' . substr($e, 1, -1) . '">' . substr($e, 1, -1) . '</option>'.PHP_EOL;
+                    },
+                    explode(",", $size) )
+                );
+                $html .= '</select>';
+                return $html;
+            }
+
+
+            
             $html = '';
             switch($type) {
                 case "text":
@@ -118,7 +137,6 @@ namespace marianojwl\GenericMySqlCRUD {
                     $html .= ' maxlength="'.$size.'"';
                     break;
                 case "bool":
-                    
                     $html .= '<input ';
                     $html .= ' type="checkbox"';
                     if($value)
@@ -169,11 +187,11 @@ namespace marianojwl\GenericMySqlCRUD {
         public function getExtra() {
             return $this->Extra;
         }
-        public function wrapValue(string $value) : string {
+        public function wrapValue($value) : string {
             if(empty( $this->valueWrapper ))
-                return $value;
+                return $value??"";
             else
-                return str_replace('{{value}}', $value, $this->valueWrapper);
+                return str_replace('{{value}}', $value??"", $this->valueWrapper);
         }
         public function wrapListedValue($value) : string {
             if($value === null)
