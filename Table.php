@@ -348,7 +348,7 @@ namespace marianojwl\GenericMySqlCRUD {
             $sql .= ") VALUES (";
             $sql .= implode(", ", $this->getColmunsExpressionForInsertQuery($post));
             $sql .= ")";
-            //echo $sql;
+            echo $sql;
 
             $this->query($sql);
         }

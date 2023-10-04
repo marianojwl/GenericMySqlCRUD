@@ -37,7 +37,7 @@ namespace marianojwl\GenericMySqlCRUD {
         }
 
         public function getExpressionForQuery($post = null) {
-            if($this->isPrimaryKey() || $this->Extra == 'on update current_timestamp()')
+            if($this->isPrimaryKey() || $this->Extra == 'on update current_timestamp()' || $this->Extra == 'DEFAULT_GENERATED on update CURRENT_TIMESTAMP')
                 return null;
             else {
                 if($post === null)
@@ -55,6 +55,7 @@ namespace marianojwl\GenericMySqlCRUD {
                             if( empty($val) && $this->getDefault() ) {
                                 switch($this->getDefault()) {
                                     case "current_timestamp()":
+                                    case "CURRENT_TIMESTAMP":
                                         return "CURRENT_TIMESTAMP";
                                         break;
                                     case "NULL":
