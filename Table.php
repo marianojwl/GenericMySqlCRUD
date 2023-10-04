@@ -216,8 +216,9 @@ namespace marianojwl\GenericMySqlCRUD {
                 $html .= '<tr>';
                 foreach($this->columns as $col) {
                     if($col->getForeignKeyTable() && $col->getForeignKeyField()) {
-                        $foreignFieldToShow = $col->table()->db()->table($col->getForeignKeyTable())->getColumns()[1]->getField();
-                        $html .= '<td>'. $record[ $col->getForeignKeyTable() ."_". $foreignFieldToShow ] .'</td>' . PHP_EOL;   
+                        $forCol = $col->table()->db()->table($col->getForeignKeyTable())->getColumns()[1];
+                        $foreignFieldToShow = $forCol->getField();
+                        $html .= '<td>'. $forCol->wrapListedValue( $record[ $col->getForeignKeyTable() ."_". $foreignFieldToShow ] ) .'</td>' . PHP_EOL;   
                     } else {
                         $html .= '<td>';
                         $html .= $col->wrapListedValue( $record[$col->getField()] );
