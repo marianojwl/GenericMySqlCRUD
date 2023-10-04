@@ -124,8 +124,8 @@ namespace marianojwl\GenericMySqlCRUD {
                 case "int":
                 case "tinyint":
                     $html .= '<input ';
-                    $html .= ' type="number"';
-                    $html .= ' max="'.(10 ** $size - 1).'"';
+                    $html .= ' type="number"'; 
+                    $html .= ' max="'.(10 * ( (int)$size ) - 1).'"';
                     break;
                 case "varchar":
                     $html .= '<input ';

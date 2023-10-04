@@ -230,7 +230,7 @@ namespace marianojwl\GenericMySqlCRUD {
                 $html .= '<td><a href="?table='.$this->name.'&action='.$ca.'&id='.$record[ $this->primaryKey ].'">'.$ca.'</a></td>';
                 $html .= '<td><a href="?table='.$this->name.'&action=view&id='.$record[ $this->primaryKey ].'">View</a></td>';
                 $html .= '<td><a href="?table='.$this->name.'&action=edit&id='.$record[ $this->primaryKey ].'">Edit</a></td>';
-                $html .= '<td><a href="?table='.$this->name.'&action=delete&id='.$record[ $this->primaryKey ].'">Del.</a></td>';
+                $html .= '<td><a href="?table='.$this->name.'&action=confirmDelete&id='.$record[ $this->primaryKey ].'">Del.</a></td>';
                 $html .= '</tr>' . PHP_EOL;
             }
             $html .= '</tbody>' . PHP_EOL;
@@ -370,6 +370,13 @@ namespace marianojwl\GenericMySqlCRUD {
             $keyValue = (int) $_GET[$this->primaryKey];
             $sql = "DELETE FROM ".$this->name." WHERE ".$this->primaryKey."='".$keyValue."'";
             $this->query($sql);
+        }
+        public function confirmDelete() {
+            $keyValue = (int) $_GET[$this->primaryKey];
+            $html = '';
+            $html .= '<div><a class="btn btn-primary" href="?table='.$this->name.'&action=delete&'.$this->getPrimaryKey().'='. $keyValue .'">Confirm Delete</a></div>';
+            $html .= $this->getRecordSheet($keyValue);
+            return $html;
         }
         public function renderForm($formValues = []) {
             echo $this->getFormHTML( $formValues );
